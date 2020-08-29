@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.localization.ThreeTrackingWheelLocalizer;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -28,24 +27,24 @@ import java.util.List;
 @Config
 public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer {
     public static double TICKS_PER_REV = 0;
-    public static double WHEEL_RADIUS = 2; // in
+    public static double WHEEL_RADIUS = 1.181102; // in
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (encoder) speed
 
-    public static double LATERAL_DISTANCE = 10; // in; distance between the left and right wheels
-    public static double FORWARD_OFFSET = 4; // in; offset of the lateral wheel
+    public static double LATERAL_DISTANCE = 14.96063; // in; distance between the left and right wheels
+    public static double FORWARD_OFFSET = -5.905512; // in; offset of the lateral wheel
 
-    private DcMotorEx leftEncoder, rightEncoder, frontEncoder;
+    private DcMotorEx leftEncoder, rightEncoder, rearEncoder;
 
     public StandardTrackingWheelLocalizer(HardwareMap hardwareMap) {
         super(Arrays.asList(
                 new Pose2d(0, LATERAL_DISTANCE / 2, 0), // left
                 new Pose2d(0, -LATERAL_DISTANCE / 2, 0), // right
-                new Pose2d(FORWARD_OFFSET, 0, Math.toRadians(90)) // front
+                new Pose2d(FORWARD_OFFSET, 0, Math.toRadians(90)) // rear
         ));
 
-        leftEncoder = hardwareMap.get(DcMotorEx.class, "leftEncoder");
-        rightEncoder = hardwareMap.get(DcMotorEx.class, "rightEncoder");
-        frontEncoder = hardwareMap.get(DcMotorEx.class, "frontEncoder");
+        leftEncoder = hardwareMap.get(DcMotorEx.class, "flDrive");
+        rightEncoder = hardwareMap.get(DcMotorEx.class, "frDrive");
+        rearEncoder = hardwareMap.get(DcMotorEx.class, "rlDrive");
     }
 
     public static double encoderTicksToInches(double ticks) {
@@ -58,7 +57,7 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
         return Arrays.asList(
                 encoderTicksToInches(leftEncoder.getCurrentPosition()),
                 encoderTicksToInches(rightEncoder.getCurrentPosition()),
-                encoderTicksToInches(frontEncoder.getCurrentPosition())
+                encoderTicksToInches(rearEncoder.getCurrentPosition())
         );
     }
 
@@ -68,7 +67,7 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
         return Arrays.asList(
                 encoderTicksToInches(leftEncoder.getVelocity()),
                 encoderTicksToInches(rightEncoder.getVelocity()),
-                encoderTicksToInches(frontEncoder.getVelocity())
+                encoderTicksToInches(rearEncoder.getVelocity())
         );
     }
 }
