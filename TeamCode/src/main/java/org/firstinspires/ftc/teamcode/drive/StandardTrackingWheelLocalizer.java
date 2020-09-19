@@ -34,11 +34,7 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
     public static double LATERAL_DISTANCE = 14.96063; // in; distance between the left and right wheels
     public static double FORWARD_OFFSET = -5.905512; // in; offset of the lateral wheel
 
-<<<<<<< HEAD
-    private DcMotorEx leftEncoder, rightEncoder, rearEncoder;
-=======
-    private Encoder leftEncoder, rightEncoder, frontEncoder;
->>>>>>> df54b23ba0dd8fff489e18b130c2773d55f25651
+    private Encoder leftEncoder, rightEncoder, rearEncoder;
 
     public StandardTrackingWheelLocalizer(HardwareMap hardwareMap) {
         super(Arrays.asList(
@@ -47,17 +43,11 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
                 new Pose2d(FORWARD_OFFSET, 0, Math.toRadians(90)) // rear
         ));
 
-<<<<<<< HEAD
-        leftEncoder = hardwareMap.get(DcMotorEx.class, "flDrive");
-        rightEncoder = hardwareMap.get(DcMotorEx.class, "frDrive");
-        rearEncoder = hardwareMap.get(DcMotorEx.class, "rlDrive");
-=======
-        leftEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "leftEncoder"));
-        rightEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "rightEncoder"));
-        frontEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "frontEncoder"));
+        leftEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "flDrive"));
+        rightEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "frDrive"));
+        rearEncoder = new Encoder(hardwareMap.get(DcMotorEx.class, "rlDrive"));
 
         // TODO: reverse any encoders using Encoder.setDirection(Encoder.Direction.REVERSE)
->>>>>>> df54b23ba0dd8fff489e18b130c2773d55f25651
     }
 
     public static double encoderTicksToInches(double ticks) {
@@ -82,15 +72,10 @@ public class StandardTrackingWheelLocalizer extends ThreeTrackingWheelLocalizer 
         //  compensation method
 
         return Arrays.asList(
-<<<<<<< HEAD
-                encoderTicksToInches(leftEncoder.getVelocity()),
-                encoderTicksToInches(rightEncoder.getVelocity()),
-                encoderTicksToInches(rearEncoder.getVelocity())
-=======
-                encoderTicksToInches(leftEncoder.getRawVelocity()),
-                encoderTicksToInches(rightEncoder.getRawVelocity()),
-                encoderTicksToInches(frontEncoder.getRawVelocity())
->>>>>>> df54b23ba0dd8fff489e18b130c2773d55f25651
+                encoderTicksToInches(leftEncoder.getCorrectedVelocity()),
+                encoderTicksToInches(rightEncoder.getCorrectedVelocity()),
+                encoderTicksToInches(rearEncoder.getCorrectedVelocity())
+
         );
     }
 }

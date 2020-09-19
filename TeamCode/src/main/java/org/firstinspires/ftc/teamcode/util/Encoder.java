@@ -63,6 +63,7 @@ public class Encoder {
 
     /**
      * Allows you to set the direction of the counts and velocity without modifying the motor's direction state
+     *
      * @param direction either reverse or forward depending on if encoder counts should be negated
      */
     public void setDirection(Direction direction) {
@@ -90,8 +91,4 @@ public class Encoder {
     public double getCorrectedVelocity() {
         return inverseOverflow(getRawVelocity(), velocityEstimate);
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> df54b23ba0dd8fff489e18b130c2773d55f25651
