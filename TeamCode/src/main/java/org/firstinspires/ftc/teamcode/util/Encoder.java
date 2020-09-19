@@ -90,4 +90,8 @@ public class Encoder {
     public double getCorrectedVelocity() {
         return inverseOverflow(getRawVelocity(), velocityEstimate);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> df54b23ba0dd8fff489e18b130c2773d55f25651
