@@ -102,7 +102,7 @@ public class ShooterTest extends OpMode
         double shooterPower = 0;
 
         if (gamepad1.x) {
-            shooterPower = 1;
+            shooterPower = -gamepad1.left_stick_y;
             shooter.setPower(shooterPower);
         }
 
