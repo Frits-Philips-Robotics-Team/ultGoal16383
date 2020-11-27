@@ -33,7 +33,7 @@ import static org.firstinspires.ftc.teamcode.drive.DriveConstants.kV;
  * errors over time and adjust the feedforward coefficients. Once you've found a satisfactory set
  * of gains, add them to your drive class.
  */
-@Disabled
+//@Disabled
 @Config
 @Autonomous(group = "drive")
 public class ManualFeedforwardTuner extends LinearOpMode {

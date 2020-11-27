@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -38,21 +39,28 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.drive.RingHandling;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.util.PersistentStorage;
 
+@Config
 @TeleOp(name="TeleOp Field Centric", group="basic")
 public class TeleOpFieldCentric extends OpMode
 {
-    // Declare OpMode members.
-    SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+    SampleMecanumDrive drive;
+    RingHandling rings;
 
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        // Declare OpMode members.
+        drive = new SampleMecanumDrive(hardwareMap);
+        rings = new RingHandling(hardwareMap);
+
+        //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         drive.setPoseEstimate(PersistentStorage.currentPose);
     }
@@ -80,11 +88,21 @@ public class TeleOpFieldCentric extends OpMode
         Pose2d poseEstimate = drive.getPoseEstimate();
 
         // Create a vector from gamepad x/y, then rotate it by current robot heading
-        Vector2d input = new Vector2d(-gamepad1.left_stick_y, gamepad1.left_stick_x)
+        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x)
                 .rotated((-poseEstimate.getHeading()));
 
         // Pass rotated input + right stick value for rotation to drive function
-        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), gamepad1.right_stick_x));
+        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), -gamepad1.right_stick_x));
+
+        if (gamepad1.a) {
+            rings.setIntake(1);
+        }
+        else if (gamepad1.y) {
+            rings.setIntake(0);
+        }
+        else if (gamepad1.x) {
+            rings.setIntake(-1);
+        }
 
         // updates everything. Localizer, drive functions, etc.
         drive.update();
