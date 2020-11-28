@@ -29,53 +29,40 @@
 
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
-/**
- * This file contains an example of an iterative (Non-Linear) "OpMode".
- * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
- * The names of OpModes appear on the menu of the FTC Driver Station.
- * When an selection is made from the menu, the corresponding OpMode
- * class is instantiated on the Robot Controller and executed.
- *
- * This particular OpMode just executes a basic Tank Drive Teleop for a two wheeled robot
- * It includes all the skeletal structure that all iterative OpModes contain.
- *
- * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
- */
+import org.firstinspires.ftc.teamcode.drive.RingHandling;
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.util.PersistentStorage;
 
-@TeleOp(name="Shooter Test", group="Iterative Opmode")
+@Config
+@TeleOp(name="TeleOp Field Centric", group="basic")
 public class ShooterTest extends OpMode
 {
-    // Declare OpMode members.
-    private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor shooter = null;
+    SampleMecanumDrive drive;
+    RingHandling rings;
+
+    double rpmSetpoint;
 
     /*
      * Code to run ONCE when the driver hits INIT
      */
     @Override
     public void init() {
-        telemetry.addData("Status", "Initialized");
 
-        // Initialize the hardware variables. Note that the strings used here as parameters
-        // to 'get' must correspond to the names assigned during the robot configuration
-        // step (using the FTC Robot Controller app on the phone).
-        shooter  = hardwareMap.get(DcMotor.class, "flDrive");
+        // Declare OpMode members.
+        drive = new SampleMecanumDrive(hardwareMap);
+        rings = new RingHandling(hardwareMap);
 
-        // Most robots need the motor on one side to be reversed to drive forward
-        // Reverse the motor that runs backwards when connected directly to the battery
-        shooter.setDirection(DcMotor.Direction.FORWARD);
+        //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        // Tell the driver that initialization is complete.
-        telemetry.addData("Status", "Initialized");
+        drive.setPoseEstimate(PersistentStorage.currentPose);
+
+        rpmSetpoint = 6000;
     }
 
     /*
@@ -83,6 +70,7 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void init_loop() {
+        drive.update();
     }
 
     /*
@@ -90,7 +78,6 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void start() {
-        runtime.reset();
     }
 
     /*
@@ -98,22 +85,49 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void loop() {
-        // Setup a variable for each drive wheel to save power level for telemetry
-        double shooterPower = 0;
+        Pose2d poseEstimate = drive.getPoseEstimate();
 
-        if (gamepad1.x) {
-            shooterPower = -gamepad1.left_stick_y;
-            shooter.setPower(shooterPower);
+        // Create a vector from gamepad x/y, then rotate it by current robot heading
+        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x)
+                .rotated((-poseEstimate.getHeading()));
+
+        // Pass rotated input + right stick value for rotation to drive function
+        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), -gamepad1.right_stick_x));
+
+        if (gamepad1.a) {
+            rings.setIntake(1);
+        }
+        else if (gamepad1.y) {
+            rings.setIntake(0);
+        }
+        else if (gamepad1.x) {
+            rings.setIntake(-1);
         }
 
-        if (gamepad1.y) {
-            shooterPower = 0;
-            shooter.setPower(shooterPower);
+        // Broadly setting rpm with trigger and finetuning using dpad
+        if (gamepad2.right_bumper) {
+            rpmSetpoint = gamepad2.right_trigger * 6000;
+        }
+        else if (gamepad2.dpad_down) {
+            rpmSetpoint -= 10;
+        }
+        else if (gamepad2.dpad_up) {
+            rpmSetpoint += 10;
         }
 
-        // Show the elapsed game time and wheel power.
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("Motors", "shooter (%.2f)", shooterPower);
+        // Shooter disable and enable
+        if (gamepad2.y) {
+            rings.setRPM(0);
+        }
+        else if (gamepad2.x) {
+            rings.setRPM(rpmSetpoint);
+        }
+
+        // updates everything. Localizer, drive functions, etc.
+        drive.update();
+        // This is what the shooter test is all about
+        telemetry.addData("Set RPM: ", (int) rpmSetpoint);
+        telemetry.addData("Current RPM: ", (int) rings.getRPM());
     }
 
     /*
