@@ -50,6 +50,7 @@ public class TeleOpFieldCentric extends OpMode
     SampleMecanumDrive drive;
     RingHandling rings;
 
+    Pose2d poseOffset;
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -63,6 +64,8 @@ public class TeleOpFieldCentric extends OpMode
         //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         drive.setPoseEstimate(PersistentStorage.currentPose);
+
+        poseOffset = new Pose2d(0, 0, 0);
     }
 
     /*
@@ -87,12 +90,18 @@ public class TeleOpFieldCentric extends OpMode
     public void loop() {
         Pose2d poseEstimate = drive.getPoseEstimate();
 
-        // Create a vector from gamepad x/y, then rotate it by current robot heading
+        // Create a vector from gamepad x/y, then rotate it by current robot heading.
+        // If applicable, use offset to change field centric orientation.
         Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x)
-                .rotated((-poseEstimate.getHeading()));
+                .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
 
         // Pass rotated input + right stick value for rotation to drive function
         drive.setDrivePower(new Pose2d(input.getX(), input.getY(), -gamepad1.right_stick_x));
+
+        // Sets an offset so that the current rotation is used as field perspective for field centric drive
+        if (gamepad1.right_bumper) {
+            poseOffset = new Pose2d(0, 0, poseEstimate.getHeading());
+        }
 
         if (gamepad1.a) {
             rings.setIntake(1);
