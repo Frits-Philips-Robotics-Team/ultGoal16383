@@ -34,17 +34,20 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.drive.RingHandling;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.util.PersistentStorage;
 
 @Config
-@TeleOp(name="TeleOp Field Centric", group="basic")
+@TeleOp(name="ShooterTest", group="basic")
 public class ShooterTest extends OpMode
 {
     SampleMecanumDrive drive;
     RingHandling rings;
+
+    ElapsedTime matchTimer = new ElapsedTime();
 
     double rpmSetpoint;
 
@@ -78,6 +81,7 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void start() {
+        matchTimer.reset();
     }
 
     /*
@@ -123,8 +127,13 @@ public class ShooterTest extends OpMode
             rings.setRPM(rpmSetpoint);
         }
 
+        if (gamepad2.left_bumper) {
+            rings.triggerPusher(matchTimer.milliseconds());
+        }
+
         // updates everything. Localizer, drive functions, etc.
         drive.update();
+        rings.update(matchTimer.milliseconds());
         // This is what the shooter test is all about
         telemetry.addData("Set RPM: ", (int) rpmSetpoint);
         telemetry.addData("Current RPM: ", (int) rings.getRPM());
