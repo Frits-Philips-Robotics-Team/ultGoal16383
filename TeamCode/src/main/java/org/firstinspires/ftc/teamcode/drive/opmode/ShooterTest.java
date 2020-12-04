@@ -147,6 +147,11 @@ public class ShooterTest extends OpMode
         // Pass rotated input + right stick value for rotation to drive function
         drive.setDrivePower(new Pose2d(input.getX(), input.getY(), rotate));
 
+        // Get ready for shooting and point at the goal
+        if (gamepad1.left_bumper) {
+            drive.turn(rings.shootGetHeading(poseEstimate, "blue"));
+        }
+
         // Sets an offset so that the current rotation is used as field perspective for field centric drive
         if (gamepad1.right_bumper) {
             poseOffset = new Pose2d(0, 0, poseEstimate.getHeading());
