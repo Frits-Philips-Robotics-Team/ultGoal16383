@@ -50,7 +50,6 @@ public class TeleOpFieldCentric extends OpMode
 {
     SampleMecanumDrive drive;
     RingHandling rings;
-    private BNO055IMU imu;
     ElapsedTime rotateTimer = new ElapsedTime();
     ElapsedTime gameTimer = new ElapsedTime();
 
@@ -105,7 +104,7 @@ public class TeleOpFieldCentric extends OpMode
 
         // Create a vector from gamepad x/y, then rotate it by current robot heading.
         // If applicable, use offset to change field centric orientation.
-        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x)
+        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x).times(0.3 + 0.7 * gamepad1.right_trigger)
                 .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
 
         if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - (2 * Math.PI)))) {

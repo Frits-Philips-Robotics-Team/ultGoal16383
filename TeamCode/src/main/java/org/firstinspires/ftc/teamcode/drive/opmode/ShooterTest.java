@@ -46,8 +46,18 @@ public class ShooterTest extends OpMode
 {
     SampleMecanumDrive drive;
     RingHandling rings;
+    ElapsedTime rotateTimer = new ElapsedTime();
+    ElapsedTime gameTimer = new ElapsedTime();
 
+    boolean wasRotating;
+    double rotationSetpoint;
+    double currentHeading;
+    double rotationError;
+    double rotate;
+    final double adjustmentSpeed = 0.4;
     ElapsedTime matchTimer = new ElapsedTime();
+
+    Pose2d poseOffset;
 
     double rpmSetpoint;
 
@@ -65,6 +75,9 @@ public class ShooterTest extends OpMode
 
         drive.setPoseEstimate(PersistentStorage.currentPose);
 
+        wasRotating = false;
+        rotationSetpoint = currentHeading = PersistentStorage.currentPose.getHeading();
+        poseOffset = new Pose2d(0, 0, 0);
         rpmSetpoint = 6000;
     }
 
@@ -91,12 +104,53 @@ public class ShooterTest extends OpMode
     public void loop() {
         Pose2d poseEstimate = drive.getPoseEstimate();
 
-        // Create a vector from gamepad x/y, then rotate it by current robot heading
-        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x)
-                .rotated((-poseEstimate.getHeading()));
+        // Create a vector from gamepad x/y, then rotate it by current robot heading.
+        // If applicable, use offset to change field centric orientation.
+        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x).times(0.3 + 0.7 * gamepad1.right_trigger)
+                .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
 
+        if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - (2 * Math.PI)))) {
+            rotationError = rotationSetpoint - currentHeading;
+        }
+        else {
+            rotationError = rotationSetpoint - (currentHeading - (2 * Math.PI));
+        }
+
+        currentHeading = poseEstimate.getHeading();
+
+        if (gamepad1.right_stick_x == 0 && !wasRotating) {
+            rotate = adjustmentSpeed * (rotationError);
+            if (rotate >= 0) {
+                rotate = Math.pow(rotate, 0.6);
+            }
+            else {
+                rotate = -Math.pow(-rotate, 0.6);
+            }
+        } else if (wasRotating && gamepad1.right_stick_x == 0) {
+            if (rotateTimer.milliseconds() > 300) {
+                wasRotating = false;
+            }
+            rotationSetpoint = currentHeading;
+            rotate = 0;
+        } else if (!wasRotating) {
+            wasRotating = true;
+            rotate = -gamepad1.right_stick_x;
+            rotateTimer.reset();
+        } else {
+            rotate = -gamepad1.right_stick_x;
+            rotateTimer.reset();
+        }
+
+        if (Math.abs(rotate) < 0.05) {
+            rotate = 0;
+        }
         // Pass rotated input + right stick value for rotation to drive function
-        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), -gamepad1.right_stick_x));
+        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), rotate));
+
+        // Sets an offset so that the current rotation is used as field perspective for field centric drive
+        if (gamepad1.right_bumper) {
+            poseOffset = new Pose2d(0, 0, poseEstimate.getHeading());
+        }
 
         if (gamepad1.a) {
             rings.setIntake(1);
