@@ -57,15 +57,48 @@ public class RingHandling {
         Pose2d tower = new Pose2d();
 
         if (allianceColour.equals("red")) {
-            tower = new Pose2d(72, -36);
+            tower = new Pose2d(72, -38);
         }
         else {
-            tower = new Pose2d(72, 36);
+            tower = new Pose2d(72, 38);
         }
 
         currentPose = currentPose.minus(tower);
         Vector2d vector = new Vector2d(currentPose.getX(), currentPose.getY());
-        return vector.rotated(Math.PI - Math.toRadians(10)).angle();
+        return vector.rotated(Math.PI - Math.toRadians(9)).angle();
+    }
+
+    public double shootGetRPM (Pose2d currentPose, String allianceColour) {
+        double goalHeight = 42;
+        Pose2d tower = new Pose2d();
+
+        if (allianceColour.equals("red")) {
+            tower = new Pose2d(72, -38);
+        }
+        else {
+            tower = new Pose2d(72, 38);
+        }
+
+        currentPose = currentPose.minus(tower);
+        Vector2d vector = new Vector2d(currentPose.getX(), currentPose.getY());
+        double distance = 2.54 * vector.norm() - 20; // Distance to goal converted from inches to cm
+
+        return (Math.sqrt((490*Math.pow(distance, 2))/(distance*Math.tan(Math.toRadians(28))-goalHeight)))/(0.15) - Math.pow(0.03 * distance, 2.5);
+    }
+
+    public double getDistance (Pose2d currentPose, String allianceColour) {
+        Pose2d tower = new Pose2d();
+
+        if (allianceColour.equals("red")) {
+            tower = new Pose2d(72, -38);
+        }
+        else {
+            tower = new Pose2d(72, 38);
+        }
+
+        currentPose = currentPose.minus(tower);
+        Vector2d vector = new Vector2d(currentPose.getX(), currentPose.getY());
+        return 2.54 * vector.norm(); // Distance to goal converted from inches to cm
     }
 
     public void triggerPusher(double startTime) {

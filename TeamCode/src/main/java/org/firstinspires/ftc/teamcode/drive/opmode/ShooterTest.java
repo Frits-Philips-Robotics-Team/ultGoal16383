@@ -61,6 +61,8 @@ public class ShooterTest extends OpMode
 
     double rpmSetpoint;
 
+    double calcRPM;
+
     /*
      * Code to run ONCE when the driver hits INIT
      */
@@ -149,7 +151,11 @@ public class ShooterTest extends OpMode
 
         // Get ready for shooting and point at the goal
         if (gamepad1.left_bumper) {
-            drive.turn(rings.shootGetHeading(poseEstimate, "blue"));
+            drive.turn(rings.shootGetHeading(poseEstimate, "blue") - poseEstimate.getHeading());
+            calcRPM = rings.shootGetRPM(poseEstimate, "blue");
+            rings.setRPM(calcRPM);
+            wasRotating = true;
+            rotateTimer.reset();
         }
 
         // Sets an offset so that the current rotation is used as field perspective for field centric drive
@@ -194,8 +200,11 @@ public class ShooterTest extends OpMode
         drive.update();
         rings.update(matchTimer.milliseconds());
         // This is what the shooter test is all about
-        telemetry.addData("Set RPM: ", (int) rpmSetpoint);
+        telemetry.addData("calculated distance: ", (int) rings.getDistance(poseEstimate, "blue"));
+        //telemetry.addData("Set RPM: ", (int) rpmSetpoint);
         telemetry.addData("Current RPM: ", (int) rings.getRPM());
+
+        telemetry.addData("calc rpm: ", calcRPM);
     }
 
     /*
