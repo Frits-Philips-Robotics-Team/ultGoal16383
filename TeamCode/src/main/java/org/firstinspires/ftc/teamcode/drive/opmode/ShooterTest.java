@@ -136,10 +136,10 @@ public class ShooterTest extends OpMode
             rotate = 0;
         } else if (!wasRotating) {
             wasRotating = true;
-            rotate = -gamepad1.right_stick_x;
+            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
             rotateTimer.reset();
         } else {
-            rotate = -gamepad1.right_stick_x;
+            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
             rotateTimer.reset();
         }
 
