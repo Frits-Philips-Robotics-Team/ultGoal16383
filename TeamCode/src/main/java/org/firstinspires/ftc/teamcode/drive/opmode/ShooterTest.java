@@ -29,11 +29,17 @@
 
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.drive.RingHandling;
@@ -44,10 +50,12 @@ import org.firstinspires.ftc.teamcode.util.PersistentStorage;
 @TeleOp(name="ShooterTest", group="basic")
 public class ShooterTest extends OpMode
 {
-    SampleMecanumDrive drive;
+//    SampleMecanumDrive drive;
     RingHandling rings;
     ElapsedTime rotateTimer = new ElapsedTime();
     ElapsedTime gameTimer = new ElapsedTime();
+
+    private FtcDashboard dashboard = FtcDashboard.getInstance();
 
     boolean wasRotating;
     double rotationSetpoint;
@@ -56,6 +64,14 @@ public class ShooterTest extends OpMode
     double rotate;
     final double adjustmentSpeed = 0.4;
     ElapsedTime matchTimer = new ElapsedTime();
+
+    private VoltageSensor batteryVoltageSensor;
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(30, 0, 2, 14);
+
+    double lastKp;
+    double lastKi;
+    double lastKd;
+    double lastKf;
 
     Pose2d poseOffset;
 
@@ -68,14 +84,23 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void init() {
-
         // Declare OpMode members.
-        drive = new SampleMecanumDrive(hardwareMap);
+//        drive = new SampleMecanumDrive(hardwareMap);
         rings = new RingHandling(hardwareMap);
+
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+
+        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
+        setPIDFCoefficients(rings.shooter, MOTOR_VELO_PID);
+
+        lastKp = 0.0;
+        lastKi = 0.0;
+        lastKd = 0.0;
+        lastKf = getMotorVelocityF();
 
         //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        drive.setPoseEstimate(PersistentStorage.currentPose);
+//        drive.setPoseEstimate(PersistentStorage.currentPose);
 
         wasRotating = false;
         rotationSetpoint = currentHeading = PersistentStorage.currentPose.getHeading();
@@ -88,7 +113,7 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void init_loop() {
-        drive.update();
+//        drive.update();
     }
 
     /*
@@ -104,74 +129,82 @@ public class ShooterTest extends OpMode
      */
     @Override
     public void loop() {
-        Pose2d poseEstimate = drive.getPoseEstimate();
+        Pose2d poseEstimate = new Pose2d(0, 0, 0);
 
-        // Create a vector from gamepad x/y, then rotate it by current robot heading.
-        // If applicable, use offset to change field centric orientation.
-        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x).times(0.3 + 0.7 * gamepad1.right_trigger)
-                .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
-
-        if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - (2 * Math.PI)))) {
-            rotationError = rotationSetpoint - currentHeading;
-        }
-        else {
-            rotationError = rotationSetpoint - (currentHeading - (2 * Math.PI));
-        }
-
-        currentHeading = poseEstimate.getHeading();
-
-        if (gamepad1.right_stick_x == 0 && !wasRotating) {
-            rotate = adjustmentSpeed * (rotationError);
-            if (rotate >= 0) {
-                rotate = Math.pow(rotate, 0.6);
-            }
-            else {
-                rotate = -Math.pow(-rotate, 0.6);
-            }
-        } else if (wasRotating && gamepad1.right_stick_x == 0) {
-            if (rotateTimer.milliseconds() > 300) {
-                wasRotating = false;
-            }
-            rotationSetpoint = currentHeading;
-            rotate = 0;
-        } else if (!wasRotating) {
-            wasRotating = true;
-            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
-            rotateTimer.reset();
-        } else {
-            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
-            rotateTimer.reset();
-        }
-
-        if (Math.abs(rotate) < 0.05) {
-            rotate = 0;
-        }
-        // Pass rotated input + right stick value for rotation to drive function
-        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), rotate));
-
-        // Get ready for shooting and point at the goal
-        if (gamepad1.left_bumper) {
-            drive.turn(rings.shootGetHeading(poseEstimate, "blue") - poseEstimate.getHeading());
-            calcRPM = rings.shootGetRPM(poseEstimate, "blue");
-            rings.setRPM(calcRPM);
-            wasRotating = true;
-            rotateTimer.reset();
-        }
-
-        // Sets an offset so that the current rotation is used as field perspective for field centric drive
-        if (gamepad1.right_bumper) {
-            poseOffset = new Pose2d(0, 0, poseEstimate.getHeading());
-        }
-
-        if (gamepad1.a) {
-            rings.setIntake(1);
-        }
-        else if (gamepad1.y) {
-            rings.setIntake(0);
-        }
-        else if (gamepad1.x) {
-            rings.setIntake(-1);
-        }
+//        // Create a vector from gamepad x/y, then rotate it by current robot heading.
+//        // If applicable, use offset to change field centric orientation.
+//        Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x).times(0.3 + 0.7 * gamepad1.right_trigger)
+//                .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
+//
+//        if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - Math.PI))) {
+//            rotationError = rotationSetpoint - currentHeading;
+//        }
+//        else {
+//            rotationError = rotationSetpoint - (currentHeading - (2 * Math.PI));
+//        }
+//
+//        currentHeading = poseEstimate.getHeading();
+//
+//        if (gamepad1.right_stick_x == 0 && !wasRotating) {
+//            rotate = adjustmentSpeed * (rotationError);
+//            if (rotate >= 0) {
+//                rotate = Math.pow(rotate, 0.6);
+//            }
+//            else {
+//                rotate = -Math.pow(-rotate, 0.6);
+//            }
+//        } else if (wasRotating && gamepad1.right_stick_x == 0) {
+//            if (rotateTimer.milliseconds() > 300) {
+//                wasRotating = false;
+//            }
+//            rotationSetpoint = currentHeading;
+//            rotate = 0;
+//        } else if (!wasRotating) {
+//            wasRotating = true;
+//            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
+//            rotateTimer.reset();
+//        } else {
+//            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
+//            rotateTimer.reset();
+//        }
+//
+//        if (Math.abs(rotate) < 0.05) {
+//            rotate = 0;
+//        }
+//        // Pass rotated input + right stick value for rotation to drive function
+//        drive.setDrivePower(new Pose2d(input.getX(), input.getY(), rotate));
+//
+//        // Get ready for shooting and point at the goal
+//        if (gamepad1.left_bumper) {
+//            if (rings.getRingNumber() != 0) {
+//                double calcHeading = rings.shootGetHeading(poseEstimate, "blue");
+//                if (calcHeading - poseEstimate.getHeading() > 2 * Math.PI) {
+//                    drive.turn(2 * Math.PI - (calcHeading - poseEstimate.getHeading()));
+//                }
+//                else {
+//                    drive.turn(calcHeading - poseEstimate.getHeading());
+//                }
+//                rings.shoot();
+//                wasRotating = true;
+//                rotateTimer.reset();
+//            }
+//
+//        }
+//
+//        // Sets an offset so that the current rotation is used as field perspective for field centric drive
+//        if (gamepad1.right_bumper) {
+//            poseOffset = new Pose2d(0, 0, poseEstimate.getHeading());
+//        }
+//
+//        if (gamepad1.a) {
+//            rings.setIntake(1);
+//        }
+//        else if (gamepad1.y) {
+//            rings.setIntake(0);
+//        }
+//        else if (gamepad1.x) {
+//            rings.setIntake(-1);
+//        }
 
         // Broadly setting rpm with trigger and finetuning using dpad
         if (gamepad2.right_bumper) {
@@ -196,15 +229,29 @@ public class ShooterTest extends OpMode
             rings.triggerPusher(matchTimer.milliseconds());
         }
 
-        // updates everything. Localizer, drive functions, etc.
-        drive.update();
-        rings.update(matchTimer.milliseconds());
-        // This is what the shooter test is all about
-        telemetry.addData("calculated distance: ", (int) rings.getDistance(poseEstimate, "blue"));
-        //telemetry.addData("Set RPM: ", (int) rpmSetpoint);
-        telemetry.addData("Current RPM: ", (int) rings.getRPM());
+        if (lastKp != MOTOR_VELO_PID.p || lastKi != MOTOR_VELO_PID.i || lastKd != MOTOR_VELO_PID.d || lastKf != MOTOR_VELO_PID.f) {
+            setPIDFCoefficients(rings.shooter, MOTOR_VELO_PID);
 
-        telemetry.addData("calc rpm: ", calcRPM);
+            lastKp = MOTOR_VELO_PID.p;
+            lastKi = MOTOR_VELO_PID.i;
+            lastKd = MOTOR_VELO_PID.d;
+            lastKf = MOTOR_VELO_PID.f;
+        }
+
+        // updates everything. Localizer, drive functions, etc.
+//        drive.update();
+        rings.update(matchTimer.milliseconds(), poseEstimate, "blue");
+        // This is what the shooter test is all about
+        //telemetry.addData("Set RPM: ", (int) rpmSetpoint);
+        telemetry.addData("Current RPM", (int) rings.getRPM());
+
+        telemetry.addData("set rpm", rpmSetpoint);
+//        telemetry.addData("distance sensor", rings.getDistanceSensor());
+
+        telemetry.addData("upperBound", 5000);
+        telemetry.addData("lowerBound", 0);
+
+        telemetry.update();
     }
 
     /*
@@ -214,4 +261,14 @@ public class ShooterTest extends OpMode
     public void stop() {
     }
 
+    private void setPIDFCoefficients(DcMotorEx motor, PIDFCoefficients coefficients) {
+        motor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(
+                coefficients.p, coefficients.i, coefficients.d, coefficients.f * 12 / batteryVoltageSensor.getVoltage()
+        ));
+    }
+
+    public static double getMotorVelocityF() {
+        // see https://docs.google.com/document/d/1tyWrXDfMidwYyP_5H4mZyVgaEswhOC35gvdmP-V-5hA/edit#heading=h.61g9ixenznbx
+        return 32767 * 60.0 / (394.7368421 * 425.6);
+    }
 }

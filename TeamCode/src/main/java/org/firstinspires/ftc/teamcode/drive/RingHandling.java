@@ -2,22 +2,44 @@ package org.firstinspires.ftc.teamcode.drive;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.apache.commons.math3.stat.descriptive.moment.VectorialCovariance;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.jetbrains.annotations.NotNull;
+
+import java.nio.channels.Selector;
+import java.util.concurrent.ThreadPoolExecutor;
+
+
 
 public class RingHandling {
     DcMotorEx feeder;
-    DcMotorEx shooter;
+    public DcMotorEx shooter;
     DcMotorEx intakeChain;
     DcMotorEx intakeSingle;
     Servo pusher;
+    DistanceSensor distance;
+
+    PIDFCoefficients pidf = new PIDFCoefficients(90, 2, 4, 5);
 
     double pusherStart;
+    double shooterTime;
+
+    shooterStates state_s;
+
+    public int calcRPM;
+
+    enum shooterStates {
+        INITIALIZE, CHECKRPM, WAIT, NOTHING
+    }
 
     public RingHandling(@NotNull HardwareMap hardwareMap) {
 
@@ -26,8 +48,12 @@ public class RingHandling {
         intakeChain = hardwareMap.get(DcMotorEx.class, "intakeChain");
         intakeSingle = hardwareMap.get(DcMotorEx.class, "intakeSingle");
         pusher = hardwareMap.get(Servo.class, "pusher");
+        distance = hardwareMap.get(DistanceSensor.class, "distance");
 
+        shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
         pusher.setPosition(0.2);
+
+        state_s = shooterStates.NOTHING;
 
         intakeChain.setDirection(DcMotorSimple.Direction.REVERSE);
     }
@@ -50,7 +76,7 @@ public class RingHandling {
     public double getRPM() {
         // unit conversion from the input, encoder ticks per second, to the desired output, rpm
         double ticksPerSecond = shooter.getVelocity();
-        return ticksPerSecond / 28 * 60;
+        return ticksPerSecond / 28 * -60;
     }
 
     public double shootGetHeading (Pose2d currentPose, String allianceColour) {
@@ -106,12 +132,76 @@ public class RingHandling {
         pusherStart = startTime;
     }
 
-    public void update(double time) {
+    public double getDistanceSensor() {
+        return distance.getDistance(DistanceUnit.MM);
+    }
+
+    public int getRingNumber() {
+        if (getDistanceSensor() < 40) {
+            return 3;
+        }
+        else if (getDistanceSensor() < 60) {
+            return 2;
+        }
+        else if (getDistanceSensor() < 83) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    public void shoot() {
+        state_s = shooterStates.INITIALIZE;
+    }
+
+    public void update(double time, Pose2d currentPose, String allianceColour) {
         if (pusherStart >= 0) {
-            if (time - pusherStart >= 800) {
+            if (time - pusherStart >= 600) {
                 pusher.setPosition(0.2);
                 pusherStart = -1;
             }
+        }
+
+        switch (state_s) {
+            case INITIALIZE:
+                if (getRingNumber() == 0) {
+                    state_s = shooterStates.NOTHING;
+                    break;
+                }
+                calcRPM = (int) shootGetRPM(currentPose, allianceColour);
+                setRPM(calcRPM);
+                state_s = shooterStates.CHECKRPM;
+                break;
+            case CHECKRPM:
+                if (getRPM() > (calcRPM - 60) && getRPM() < (calcRPM + 60)) {
+                    if (shooterTime == -1) {
+                        shooterTime = time;
+                    }
+                    else if (time - shooterTime >= 200) {
+                        triggerPusher(time);
+                        shooterTime = -1;
+                        state_s = shooterStates.WAIT;
+                    }
+                }
+                else {
+                    shooterTime = -1;
+                }
+                break;
+            case WAIT:
+                if (pusherStart != -1) {
+                    break;
+                }
+                else if (getRingNumber() != 0) {
+                    state_s = shooterStates.CHECKRPM;
+                }
+                else {
+                    setRPM(0);
+                    state_s = shooterStates.NOTHING;
+                }
+                break;
+            case NOTHING:
+                break;
         }
     }
 }

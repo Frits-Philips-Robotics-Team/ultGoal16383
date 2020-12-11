@@ -51,7 +51,7 @@ public class TeleOpFieldCentric extends OpMode
     SampleMecanumDrive drive;
     RingHandling rings;
     ElapsedTime rotateTimer = new ElapsedTime();
-    ElapsedTime gameTimer = new ElapsedTime();
+    ElapsedTime matchTimer = new ElapsedTime();
 
     boolean wasRotating;
     double rotationSetpoint;
@@ -93,6 +93,7 @@ public class TeleOpFieldCentric extends OpMode
      */
     @Override
     public void start() {
+        matchTimer.reset();
     }
 
     /*
@@ -107,7 +108,7 @@ public class TeleOpFieldCentric extends OpMode
         Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x).times(0.3 + 0.7 * gamepad1.right_trigger)
                 .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
 
-        if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - (2 * Math.PI)))) {
+        if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - Math.PI))) {
             rotationError = rotationSetpoint - currentHeading;
         }
         else {
@@ -132,10 +133,10 @@ public class TeleOpFieldCentric extends OpMode
             rotate = 0;
         } else if (!wasRotating) {
             wasRotating = true;
-            rotate = -gamepad1.right_stick_x;
+            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
             rotateTimer.reset();
         } else {
-            rotate = -gamepad1.right_stick_x;
+            rotate = -gamepad1.right_stick_x * (0.3 + 0.7 * gamepad1.right_trigger);
             rotateTimer.reset();
         }
 
@@ -144,6 +145,26 @@ public class TeleOpFieldCentric extends OpMode
         }
         // Pass rotated input + right stick value for rotation to drive function
         drive.setDrivePower(new Pose2d(input.getX(), input.getY(), rotate));
+
+        // Get ready for shooting and point at the goal
+        if (gamepad1.left_bumper) {
+            if (rings.getRingNumber() != 0) {
+                double calcHeading = rings.shootGetHeading(poseEstimate, "blue");
+                if (calcHeading - poseEstimate.getHeading() > Math.PI) {
+                    drive.turn(2 * Math.PI - (calcHeading - poseEstimate.getHeading()));
+                }
+                else if (calcHeading - poseEstimate.getHeading() < -Math.PI) {
+                    drive.turn(2 * Math.PI + (calcHeading - poseEstimate.getHeading()));
+                }
+                else {
+                    drive.turn(calcHeading - poseEstimate.getHeading());
+                }
+                rings.shoot();
+                wasRotating = true;
+                rotateTimer.reset();
+            }
+
+        }
 
         // Sets an offset so that the current rotation is used as field perspective for field centric drive
         if (gamepad1.right_bumper) {
@@ -162,8 +183,10 @@ public class TeleOpFieldCentric extends OpMode
 
         // updates everything. Localizer, drive functions, etc.
         drive.update();
-        telemetry.addData("rotate power: ", rotate);
-        telemetry.addData("rotate error: ", rotationError);
+        rings.update(matchTimer.milliseconds(), poseEstimate, "blue");
+
+        telemetry.addData("Current RPM", (int) rings.getRPM());
+        telemetry.addData("Calc RPM", rings.calcRPM);
     }
 
     /*
