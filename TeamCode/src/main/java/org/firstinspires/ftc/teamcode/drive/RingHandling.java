@@ -28,7 +28,7 @@ public class RingHandling {
     Servo pusher;
     DistanceSensor distance;
 
-    PIDFCoefficients pidf = new PIDFCoefficients(90, 2, 4, 5);
+    PIDFCoefficients pidf = new PIDFCoefficients(100, 0, 2, 17.8);
 
     double pusherStart;
     double shooterTime;
@@ -95,7 +95,7 @@ public class RingHandling {
     }
 
     public double shootGetRPM (Pose2d currentPose, String allianceColour) {
-        double goalHeight = 42;
+        double goalHeight = 43;
         Pose2d tower = new Pose2d();
 
         if (allianceColour.equals("red")) {
@@ -174,11 +174,11 @@ public class RingHandling {
                 state_s = shooterStates.CHECKRPM;
                 break;
             case CHECKRPM:
-                if (getRPM() > (calcRPM - 60) && getRPM() < (calcRPM + 60)) {
+                if (getRPM() > (calcRPM - 50) && getRPM() < (calcRPM + 50)) {
                     if (shooterTime == -1) {
                         shooterTime = time;
                     }
-                    else if (time - shooterTime >= 200) {
+                    else if (time - shooterTime >= 300) {
                         triggerPusher(time);
                         shooterTime = -1;
                         state_s = shooterStates.WAIT;

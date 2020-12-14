@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2017 FIRST. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -108,11 +109,14 @@ public class TeleOpFieldCentric extends OpMode
         Vector2d input = new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x).times(0.3 + 0.7 * gamepad1.right_trigger)
                 .rotated((-poseEstimate.getHeading()) - poseOffset.getHeading());
 
-        if (Math.abs(rotationSetpoint - currentHeading) < Math.abs(rotationSetpoint - (currentHeading - Math.PI))) {
+        if (Math.abs(rotationSetpoint - currentHeading) < Math.PI) {
             rotationError = rotationSetpoint - currentHeading;
         }
+        else if (rotationSetpoint - currentHeading > 0){
+            rotationError = 2 * Math.PI - (rotationSetpoint - currentHeading);
+        }
         else {
-            rotationError = rotationSetpoint - (currentHeading - (2 * Math.PI));
+            rotationError = 2 * Math.PI + (rotationSetpoint - currentHeading);
         }
 
         currentHeading = poseEstimate.getHeading();
@@ -150,14 +154,14 @@ public class TeleOpFieldCentric extends OpMode
         if (gamepad1.left_bumper) {
             if (rings.getRingNumber() != 0) {
                 double calcHeading = rings.shootGetHeading(poseEstimate, "blue");
-                if (calcHeading - poseEstimate.getHeading() > Math.PI) {
-                    drive.turn(2 * Math.PI - (calcHeading - poseEstimate.getHeading()));
+                if (Math.abs(calcHeading - currentHeading) < Math.PI) {
+                    drive.turn(calcHeading - currentHeading);
                 }
-                else if (calcHeading - poseEstimate.getHeading() < -Math.PI) {
-                    drive.turn(2 * Math.PI + (calcHeading - poseEstimate.getHeading()));
+                else if (calcHeading - currentHeading > 0){
+                    drive.turn(2 * Math.PI - (calcHeading - currentHeading));
                 }
                 else {
-                    drive.turn(calcHeading - poseEstimate.getHeading());
+                    drive.turn(2 * Math.PI + (calcHeading - currentHeading));
                 }
                 rings.shoot();
                 wasRotating = true;
