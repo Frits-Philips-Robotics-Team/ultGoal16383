@@ -28,7 +28,7 @@ public class RingHandling {
     Servo pusher;
     DistanceSensor distance;
 
-    PIDFCoefficients pidf = new PIDFCoefficients(100, 0, 2, 17.8);
+    PIDFCoefficients pidf = new PIDFCoefficients(100, 0, 2, 15.6);
 
     double pusherStart;
     double shooterTime;
@@ -50,7 +50,7 @@ public class RingHandling {
         pusher = hardwareMap.get(Servo.class, "pusher");
         distance = hardwareMap.get(DistanceSensor.class, "distance");
 
-        shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
+        //shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
         pusher.setPosition(0.2);
 
         state_s = shooterStates.NOTHING;
@@ -80,10 +80,10 @@ public class RingHandling {
     }
 
     public double shootGetHeading (Pose2d currentPose, String allianceColour) {
-        Pose2d tower = new Pose2d();
+        Pose2d tower;
 
         if (allianceColour.equals("red")) {
-            tower = new Pose2d(72, -38);
+            tower = new Pose2d(72, -24);
         }
         else {
             tower = new Pose2d(72, 38);
@@ -91,18 +91,18 @@ public class RingHandling {
 
         currentPose = currentPose.minus(tower);
         Vector2d vector = new Vector2d(currentPose.getX(), currentPose.getY());
-        return vector.rotated(Math.PI - Math.toRadians(9)).angle();
+        return vector.rotated(Math.PI - Math.toRadians(6)).angle();
     }
 
     public double shootGetRPM (Pose2d currentPose, String allianceColour) {
-        double goalHeight = 43;
+        double goalHeight = 30; //43
         Pose2d tower = new Pose2d();
 
         if (allianceColour.equals("red")) {
-            tower = new Pose2d(72, -38);
+            tower = new Pose2d(72, -24);
         }
         else {
-            tower = new Pose2d(72, 38);
+            tower = new Pose2d(72, 36);
         }
 
         currentPose = currentPose.minus(tower);
@@ -113,13 +113,13 @@ public class RingHandling {
     }
 
     public double getDistance (Pose2d currentPose, String allianceColour) {
-        Pose2d tower = new Pose2d();
+        Pose2d tower;
 
         if (allianceColour.equals("red")) {
             tower = new Pose2d(72, -38);
         }
         else {
-            tower = new Pose2d(72, 38);
+            tower = new Pose2d(72, 36);
         }
 
         currentPose = currentPose.minus(tower);

@@ -66,7 +66,7 @@ public class ShooterTest extends OpMode
     ElapsedTime matchTimer = new ElapsedTime();
 
     private VoltageSensor batteryVoltageSensor;
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(30, 0, 2, 14);
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients();
 
     double lastKp;
     double lastKi;
@@ -90,13 +90,15 @@ public class ShooterTest extends OpMode
 
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
+
+        lastKf = getMotorVelocityF();
+        lastKp = 0.1 * lastKf;
+        lastKi = 0.1 * lastKp;
+        lastKd = 0.0;
+
+        MOTOR_VELO_PID = new PIDFCoefficients(lastKp, lastKi, lastKd, lastKf);
         batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
         setPIDFCoefficients(rings.shooter, MOTOR_VELO_PID);
-
-        lastKp = 0.0;
-        lastKi = 0.0;
-        lastKd = 0.0;
-        lastKf = getMotorVelocityF();
 
         //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -247,6 +249,8 @@ public class ShooterTest extends OpMode
 
         telemetry.addData("set rpm", rpmSetpoint);
 //        telemetry.addData("distance sensor", rings.getDistanceSensor());
+        PIDFCoefficients pidf = rings.shooter.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+        telemetry.addData("PIDF", "%f %f %f %f", pidf.p, pidf.i, pidf.d, pidf.f);
 
         telemetry.addData("upperBound", 5000);
         telemetry.addData("lowerBound", 0);
@@ -268,7 +272,8 @@ public class ShooterTest extends OpMode
     }
 
     public static double getMotorVelocityF() {
+        final double maxRPM = 4500;
         // see https://docs.google.com/document/d/1tyWrXDfMidwYyP_5H4mZyVgaEswhOC35gvdmP-V-5hA/edit#heading=h.61g9ixenznbx
-        return 32767 * 60.0 / (394.7368421 * 425.6);
+        return 32767 / (maxRPM / 60 * 28);
     }
 }

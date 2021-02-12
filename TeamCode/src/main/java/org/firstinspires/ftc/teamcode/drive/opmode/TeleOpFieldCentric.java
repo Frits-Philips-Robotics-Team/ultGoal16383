@@ -113,7 +113,7 @@ public class TeleOpFieldCentric extends OpMode
             rotationError = rotationSetpoint - currentHeading;
         }
         else if (rotationSetpoint - currentHeading > 0){
-            rotationError = 2 * Math.PI - (rotationSetpoint - currentHeading);
+            rotationError = (rotationSetpoint - currentHeading) - 2 * Math.PI;
         }
         else {
             rotationError = 2 * Math.PI + (rotationSetpoint - currentHeading);
@@ -153,12 +153,12 @@ public class TeleOpFieldCentric extends OpMode
         // Get ready for shooting and point at the goal
         if (gamepad1.left_bumper) {
             if (rings.getRingNumber() != 0) {
-                double calcHeading = rings.shootGetHeading(poseEstimate, "blue");
+                double calcHeading = rings.shootGetHeading(poseEstimate, "red");
                 if (Math.abs(calcHeading - currentHeading) < Math.PI) {
                     drive.turn(calcHeading - currentHeading);
                 }
                 else if (calcHeading - currentHeading > 0){
-                    drive.turn(2 * Math.PI - (calcHeading - currentHeading));
+                    drive.turn((calcHeading - currentHeading) - 2 * Math.PI);
                 }
                 else {
                     drive.turn(2 * Math.PI + (calcHeading - currentHeading));
@@ -187,7 +187,7 @@ public class TeleOpFieldCentric extends OpMode
 
         // updates everything. Localizer, drive functions, etc.
         drive.update();
-        rings.update(matchTimer.milliseconds(), poseEstimate, "blue");
+        rings.update(matchTimer.milliseconds(), poseEstimate, "red");
 
         telemetry.addData("Current RPM", (int) rings.getRPM());
         telemetry.addData("Calc RPM", rings.calcRPM);
