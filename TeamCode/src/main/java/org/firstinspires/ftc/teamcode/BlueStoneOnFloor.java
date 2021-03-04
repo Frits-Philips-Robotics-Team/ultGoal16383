@@ -63,7 +63,7 @@ public class BlueStoneOnFloor extends LinearOpMode {
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
-                webcam.startStreaming(rows, cols, OpenCvCameraRotation.UPRIGHT);//display on RC
+                webcam.startStreaming(rows, cols, OpenCvCameraRotation.SIDEWAYS_LEFT);//display on RC
 
             }
         });

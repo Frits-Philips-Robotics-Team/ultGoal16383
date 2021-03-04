@@ -83,7 +83,7 @@ public class RingHandling {
         Pose2d tower;
 
         if (allianceColour.equals("red")) {
-            tower = new Pose2d(72, -24);
+            tower = new Pose2d(72, -36);
         }
         else {
             tower = new Pose2d(72, 38);
@@ -95,11 +95,11 @@ public class RingHandling {
     }
 
     public double shootGetRPM (Pose2d currentPose, String allianceColour) {
-        double goalHeight = 30; //43
+        double goalHeight = 42; // about 30 for powershot
         Pose2d tower = new Pose2d();
 
         if (allianceColour.equals("red")) {
-            tower = new Pose2d(72, -24);
+            tower = new Pose2d(72, -36);
         }
         else {
             tower = new Pose2d(72, 36);
@@ -116,7 +116,7 @@ public class RingHandling {
         Pose2d tower;
 
         if (allianceColour.equals("red")) {
-            tower = new Pose2d(72, -38);
+            tower = new Pose2d(72, -36);
         }
         else {
             tower = new Pose2d(72, 36);
@@ -174,7 +174,7 @@ public class RingHandling {
                 state_s = shooterStates.CHECKRPM;
                 break;
             case CHECKRPM:
-                if (getRPM() > (calcRPM - 50) && getRPM() < (calcRPM + 50)) {
+                if (getRPM() > (calcRPM - 50) && getRPM() < (calcRPM + 40)) {
                     if (shooterTime == -1) {
                         shooterTime = time;
                     }
