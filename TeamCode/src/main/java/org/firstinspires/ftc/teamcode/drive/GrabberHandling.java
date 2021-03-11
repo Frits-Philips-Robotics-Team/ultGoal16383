@@ -30,20 +30,19 @@ public class GrabberHandling {
     }
 
 
-    public void moveLeftGrabber(String armPos, String gripperPos) {
-        final double upBlockValue = 0.58;
-        final double upEmptyValue = 0.49;
-        final double downValue = 0.81;
-        final double openValue = 0.45;
-        final double closedValue = 0.85;
-        final double initialGripperValue = 1;
+    public void moveGrabber(String armPos, String gripperPos) {
+        final double upHalfValue = 0.5;
+        final double inSizeValue = 0.84;
+        final double downValue = 0.15;
+        final double openValue = 1;
+        final double closedValue = 0.55;
 
         switch (armPos) {
-            case "upBlock": arm.setPosition(upBlockValue);
+            case "upHalf": arm.setPosition(upHalfValue);
                 break;
-            case "upEmpty": arm.setPosition(upEmptyValue);
+            case "inSize": arm.setPosition(inSizeValue);
                 break;
-            case "down":    arm.setPosition(downValue);
+            case "down":   arm.setPosition(downValue);
                 break;
             default: break;
         }
@@ -51,8 +50,6 @@ public class GrabberHandling {
             case "open":    gripper.setPosition(openValue);
                 break;
             case "closed":  gripper.setPosition(closedValue);
-                break;
-            case "initial": gripper.setPosition(initialGripperValue);
                 break;
             default: break;
         }

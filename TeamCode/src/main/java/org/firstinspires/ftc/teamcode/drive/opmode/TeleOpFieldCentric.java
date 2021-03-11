@@ -41,9 +41,13 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.internal.system.Deadline;
+import org.firstinspires.ftc.teamcode.drive.GrabberHandling;
 import org.firstinspires.ftc.teamcode.drive.RingHandling;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.util.PersistentStorage;
+
+import java.util.concurrent.TimeUnit;
 
 @Config
 @TeleOp(name="TeleOp Field Centric", group="basic")
@@ -51,6 +55,7 @@ public class TeleOpFieldCentric extends OpMode
 {
     SampleMecanumDrive drive;
     RingHandling rings;
+    GrabberHandling grabber;
     ElapsedTime rotateTimer = new ElapsedTime();
     ElapsedTime matchTimer = new ElapsedTime();
 
@@ -61,6 +66,9 @@ public class TeleOpFieldCentric extends OpMode
     double rotate;
     final double adjustmentSpeed = 0.4;
 
+    boolean grabberClosed;
+
+    String target;
     Pose2d poseOffset;
     /*
      * Code to run ONCE when the driver hits INIT
@@ -71,6 +79,7 @@ public class TeleOpFieldCentric extends OpMode
         // Declare OpMode members.
         drive = new SampleMecanumDrive(hardwareMap);
         rings = new RingHandling(hardwareMap);
+        grabber = new GrabberHandling(hardwareMap);
 
         //drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -79,6 +88,11 @@ public class TeleOpFieldCentric extends OpMode
         wasRotating = false;
         rotationSetpoint = currentHeading = PersistentStorage.currentPose.getHeading();
         poseOffset = new Pose2d(0, 0, 0);
+
+        target = "red high";
+
+        grabber.moveGrabber("inSize", "closed");
+        grabberClosed = true;
     }
 
     /*
@@ -153,7 +167,7 @@ public class TeleOpFieldCentric extends OpMode
         // Get ready for shooting and point at the goal
         if (gamepad1.left_bumper) {
             if (rings.getRingNumber() != 0) {
-                double calcHeading = rings.shootGetHeading(poseEstimate, "red");
+                double calcHeading = rings.shootGetHeading(poseEstimate, target);
                 if (Math.abs(calcHeading - currentHeading) < Math.PI) {
                     drive.turn(calcHeading - currentHeading);
                 }
@@ -185,9 +199,41 @@ public class TeleOpFieldCentric extends OpMode
             rings.setIntake(-1);
         }
 
+        if (gamepad1.dpad_down) {
+            grabber.moveGrabber("down", "");
+        }
+        else if (gamepad1.dpad_up && grabberClosed) {
+            grabber.moveGrabber("upHalf", "");
+        }
+        else if (gamepad1.dpad_up) {
+            grabber.moveGrabber("inSize", "closed");
+        }
+
+        if (gamepad1.dpad_left) {
+            grabber.moveGrabber("", "closed");
+            grabberClosed = true;
+        }
+        else if (gamepad1.dpad_right) {
+            grabber.moveGrabber("", "open");
+            grabberClosed = false;
+        }
+
+        if (gamepad1.right_stick_y == -1) { // up on joystick
+            target = "red high";
+        }
+        else if (gamepad1.right_stick_y == 1) { // down on joystick
+            target = "red mid";
+        }
+        else if (gamepad1.left_stick_button) {
+            target = "red left";
+        }
+        else if (gamepad1.right_stick_button) {
+            target = "red right";
+        }
+
         // updates everything. Localizer, drive functions, etc.
         drive.update();
-        rings.update(matchTimer.milliseconds(), poseEstimate, "red");
+        rings.update(matchTimer.milliseconds(), poseEstimate, target);
 
         telemetry.addData("Current RPM", (int) rings.getRPM());
         telemetry.addData("Calc RPM", rings.calcRPM);

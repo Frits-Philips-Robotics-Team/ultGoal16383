@@ -35,6 +35,8 @@ public class RingHandling {
 
     shooterStates state_s;
 
+    HardwareMap hardwareMap;
+
     public int calcRPM;
 
     enum shooterStates {
@@ -42,6 +44,7 @@ public class RingHandling {
     }
 
     public RingHandling(@NotNull HardwareMap hardwareMap) {
+        this.hardwareMap = hardwareMap;
 
         feeder = hardwareMap.get(DcMotorEx.class, "feeder");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
@@ -79,30 +82,53 @@ public class RingHandling {
         return ticksPerSecond / 28 * -60;
     }
 
-    public double shootGetHeading (Pose2d currentPose, String allianceColour) {
+    public double shootGetHeading (Pose2d currentPose, String target) {
         Pose2d tower;
-
-        if (allianceColour.equals("red")) {
+        
+        if (target.equals("red high")) {
             tower = new Pose2d(72, -36);
         }
+        else if (target.equals("blue high")) {
+            tower = new Pose2d(72, 36);
+        }
+        else if (target.equals("red left")) {
+            tower = new Pose2d(72, -7);
+        }
+        else if (target.equals("red mid")) {
+            tower = new Pose2d(72, -14);
+        }
         else {
-            tower = new Pose2d(72, 38);
+            tower = new Pose2d(72, -21);
         }
 
         currentPose = currentPose.minus(tower);
         Vector2d vector = new Vector2d(currentPose.getX(), currentPose.getY());
-        return vector.rotated(Math.PI - Math.toRadians(6)).angle();
+        return vector.rotated(Math.PI - Math.toRadians(3)).angle();
     }
 
-    public double shootGetRPM (Pose2d currentPose, String allianceColour) {
-        double goalHeight = 42; // about 30 for powershot
-        Pose2d tower = new Pose2d();
+    public double shootGetRPM (Pose2d currentPose, String target) {
+        double goalHeight;
+        Pose2d tower;
 
-        if (allianceColour.equals("red")) {
+        if (target.equals("red high")) {
             tower = new Pose2d(72, -36);
+            goalHeight = 42; // about 30 for powershot
+        }
+        else if (target.equals("blue high")) {
+            tower = new Pose2d(72, 36);
+            goalHeight = 42;
+        }
+        else if (target.equals("red left")) {
+            tower = new Pose2d(72, -7);
+            goalHeight = 30;
+        }
+        else if (target.equals("red mid")) {
+            tower = new Pose2d(72, -14);
+            goalHeight = 30;
         }
         else {
-            tower = new Pose2d(72, 36);
+            tower = new Pose2d(72, -21);
+            goalHeight = 30;
         }
 
         currentPose = currentPose.minus(tower);
@@ -112,14 +138,23 @@ public class RingHandling {
         return (Math.sqrt((490*Math.pow(distance, 2))/(distance*Math.tan(Math.toRadians(28))-goalHeight)))/(0.15) - Math.pow(0.03 * distance, 2.5);
     }
 
-    public double getDistance (Pose2d currentPose, String allianceColour) {
+    public double getDistance (Pose2d currentPose, String target) {
         Pose2d tower;
 
-        if (allianceColour.equals("red")) {
+        if (target.equals("red high")) {
             tower = new Pose2d(72, -36);
         }
-        else {
+        else if (target.equals("blue high")) {
             tower = new Pose2d(72, 36);
+        }
+        else if (target.equals("red left")) {
+            tower = new Pose2d(72, -7);
+        }
+        else if (target.equals("red mid")) {
+            tower = new Pose2d(72, -14);
+        }
+        else {
+            tower = new Pose2d(72, -21);
         }
 
         currentPose = currentPose.minus(tower);
@@ -133,7 +168,8 @@ public class RingHandling {
     }
 
     public double getDistanceSensor() {
-        return distance.getDistance(DistanceUnit.MM);
+        double dist = distance.getDistance(DistanceUnit.MM);
+        return dist;
     }
 
     public int getRingNumber() {
@@ -155,7 +191,7 @@ public class RingHandling {
         state_s = shooterStates.INITIALIZE;
     }
 
-    public void update(double time, Pose2d currentPose, String allianceColour) {
+    public void update(double time, Pose2d currentPose, String target) {
         if (pusherStart >= 0) {
             if (time - pusherStart >= 600) {
                 pusher.setPosition(0.2);
@@ -169,7 +205,7 @@ public class RingHandling {
                     state_s = shooterStates.NOTHING;
                     break;
                 }
-                calcRPM = (int) shootGetRPM(currentPose, allianceColour);
+                calcRPM = (int) shootGetRPM(currentPose, target);
                 setRPM(calcRPM);
                 state_s = shooterStates.CHECKRPM;
                 break;
@@ -191,6 +227,10 @@ public class RingHandling {
             case WAIT:
                 if (pusherStart != -1) {
                     break;
+                }
+                else if (target.contains("left") || target.contains("mid") || target.contains("right")) {
+                    setRPM(0);
+                    state_s = shooterStates.NOTHING;
                 }
                 else if (getRingNumber() != 0) {
                     state_s = shooterStates.CHECKRPM;

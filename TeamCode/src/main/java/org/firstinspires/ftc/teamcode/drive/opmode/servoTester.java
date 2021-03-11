@@ -48,9 +48,11 @@ public class servoTester extends OpMode {
 
         if (gamepad1.left_bumper) {
             GAMEPAD_LOCKOUT = 50;
+            gamepadRateLimit = new Deadline(GAMEPAD_LOCKOUT, TimeUnit.MILLISECONDS);
         }
         else if (gamepad1.right_bumper) {
             GAMEPAD_LOCKOUT = 500;
+            gamepadRateLimit = new Deadline(GAMEPAD_LOCKOUT, TimeUnit.MILLISECONDS);
         }
 
         reportPositions();
