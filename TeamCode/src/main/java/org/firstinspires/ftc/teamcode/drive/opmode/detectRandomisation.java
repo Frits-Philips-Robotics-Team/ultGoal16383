@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.drive.opmode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -27,24 +27,22 @@ import java.util.Locale;
 
 @Autonomous(name= "BlueStoneOnFloor", group="blue")
 //@Disabled//comment out this line before using
-public class BlueStoneOnFloor extends LinearOpMode {
+public class detectRandomisation extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
 
 
-    //0 means skystone, 1 means yellow stone
+    //0 means no ring, 1 means orange ring
     //-1 for debug, but we can keep it like this because if it works, it should change to either 0 or 255
-    private static int valMid = -1;
-    private static int valLeft = -1;
-    private static int valRight = -1;
+    private static int valTop = -1;
+    private static int valBottom = -1;
     private static float rectHeight = .6f/8f;
     private static float rectWidth = 1.5f/8f;
 
     private static float offsetX = 0f/8f;//changing this moves the three rects and the three circles left or right, range : (-2, 2) not inclusive
     private static float offsetY = 1f/8f;//changing this moves the three rects and circles up or down, range: (-4, 4) not inclusive
 
-    private static float[] midPos = {3.8f/8f+offsetX, 4f/8f+offsetY};//0 = col, 1 = row
-    private static float[] leftPos = {2f/8f+offsetX, 4f/8f+offsetY};
-    private static float[] rightPos = {5.6f/8f+offsetX, 4f/8f+offsetY};
+    private static float[] topPos = {3f/8f+offsetX, 4f/8f+offsetY};//0 = col, 1 = row
+    private static float[] bottomPos = {3f/8f+offsetX, 3f/8f+offsetY};
     //moves all rectangles right or left by amount. units are in ratio to monitor
 
     private final int rows = 240;
@@ -71,16 +69,13 @@ public class BlueStoneOnFloor extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        telemetry.addData("Values", valLeft + "   " + valMid + "   " + valRight);
+        telemetry.addData("Values", valBottom + "   " + valTop);
         telemetry.addData("Height", rows);
         telemetry.addData("Width", cols);
         telemetry.update();
 
         while (opModeIsActive()) {
-            if (gamepad1.a) {
-                File output = new File(AppUtil.ROBOT_DATA_DIR, String.format(Locale.getDefault(), "detect-frame-%d.jpg", captureCounter++));
-
-            }
+            telemetry.update();
         }
     }
 
@@ -128,13 +123,13 @@ public class BlueStoneOnFloor extends LinearOpMode {
         {
             contoursList.clear();
             /*
-             * This pipeline finds the contours of yellow blobs such as the Gold Mineral
-             * from the Rover Ruckus game.
+             * This pipeline finds the contours of yellow blobs such as the ring from
+             * the Ultimate Goal season
              */
 
             //color diff cb.
-            //lower cb = more blue = skystone = white
-            //higher cb = less blue = yellow stone = grey
+            //lower cb = more blue = field = white
+            //higher cb = less blue = orange ring = grey
             Imgproc.cvtColor(input, yCbCrChan2Mat, Imgproc.COLOR_RGB2YCrCb);//converts rgb to ycrcb
             Core.extractChannel(yCbCrChan2Mat, yCbCrChan2Mat, 2);//takes cb difference and stores
 
@@ -148,52 +143,39 @@ public class BlueStoneOnFloor extends LinearOpMode {
 
 
             //get values from frame
-            double[] pixMid = thresholdMat.get((int)(input.rows()* midPos[1]), (int)(input.cols()* midPos[0]));//gets value at circle
-            valMid = (int)pixMid[0];
+            double[] pixTop = thresholdMat.get((int)(input.rows()* topPos[1]), (int)(input.cols()* topPos[0]));//gets value at circle
+            valTop = (int)pixTop[0];
 
-            double[] pixLeft = thresholdMat.get((int)(input.rows()* leftPos[1]), (int)(input.cols()* leftPos[0]));//gets value at circle
-            valLeft = (int)pixLeft[0];
+            double[] pixBottom = thresholdMat.get((int)(input.rows()* bottomPos[1]), (int)(input.cols()* bottomPos[0]));//gets value at circle
+            valBottom = (int)pixBottom[0];
 
-            double[] pixRight = thresholdMat.get((int)(input.rows()* rightPos[1]), (int)(input.cols()* rightPos[0]));//gets value at circle
-            valRight = (int)pixRight[0];
 
             //create three points
-            Point pointMid = new Point((int)(input.cols()* midPos[0]), (int)(input.rows()* midPos[1]));
-            Point pointLeft = new Point((int)(input.cols()* leftPos[0]), (int)(input.rows()* leftPos[1]));
-            Point pointRight = new Point((int)(input.cols()* rightPos[0]), (int)(input.rows()* rightPos[1]));
+            Point pointTop = new Point((int)(input.cols()* topPos[0]), (int)(input.rows()* topPos[1]));
+            Point pointBottom = new Point((int)(input.cols()* bottomPos[0]), (int)(input.rows()* bottomPos[1]));
 
             //draw circles on those points
-            Imgproc.circle(all, pointMid,5, new Scalar( 255, 0, 0 ),1 );//draws circle
-            Imgproc.circle(all, pointLeft,5, new Scalar( 255, 0, 0 ),1 );//draws circle
-            Imgproc.circle(all, pointRight,5, new Scalar( 255, 0, 0 ),1 );//draws circle
+            Imgproc.circle(all, pointTop,5, new Scalar( 255, 0, 0 ),1 );//draws circle
+            Imgproc.circle(all, pointBottom,5, new Scalar( 255, 0, 0 ),1 );//draws circle
 
             //draw 3 rectangles
             Imgproc.rectangle(//1-3
                     all,
                     new Point(
-                            input.cols()*(leftPos[0]-rectWidth/2),
-                            input.rows()*(leftPos[1]-rectHeight/2)),
+                            input.cols()*(bottomPos[0]-rectWidth/2),
+                            input.rows()*(bottomPos[1]-rectHeight/2)),
                     new Point(
-                            input.cols()*(leftPos[0]+rectWidth/2),
-                            input.rows()*(leftPos[1]+rectHeight/2)),
+                            input.cols()*(bottomPos[0]+rectWidth/2),
+                            input.rows()*(bottomPos[1]+rectHeight/2)),
                     new Scalar(0, 255, 0), 3);
             Imgproc.rectangle(//3-5
                     all,
                     new Point(
-                            input.cols()*(midPos[0]-rectWidth/2),
-                            input.rows()*(midPos[1]-rectHeight/2)),
+                            input.cols()*(topPos[0]-rectWidth/2),
+                            input.rows()*(topPos[1]-rectHeight/2)),
                     new Point(
-                            input.cols()*(midPos[0]+rectWidth/2),
-                            input.rows()*(midPos[1]+rectHeight/2)),
-                    new Scalar(0, 255, 0), 3);
-            Imgproc.rectangle(//5-7
-                    all,
-                    new Point(
-                            input.cols()*(rightPos[0]-rectWidth/2),
-                            input.rows()*(rightPos[1]-rectHeight/2)),
-                    new Point(
-                            input.cols()*(rightPos[0]+rectWidth/2),
-                            input.rows()*(rightPos[1]+rectHeight/2)),
+                            input.cols()*(topPos[0]+rectWidth/2),
+                            input.rows()*(topPos[1]+rectHeight/2)),
                     new Scalar(0, 255, 0), 3);
 
             switch (stageToRenderToViewport)
