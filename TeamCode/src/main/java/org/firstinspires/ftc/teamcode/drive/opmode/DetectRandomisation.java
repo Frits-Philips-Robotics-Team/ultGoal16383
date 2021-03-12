@@ -66,17 +66,26 @@ public class DetectRandomisation extends LinearOpMode {
             }
         });
 
-        waitForStart();
-        runtime.reset();
-
         telemetry.addData("Values", valBottom + "   " + valTop);
         telemetry.addData("Height", rows);
         telemetry.addData("Width", cols);
         telemetry.update();
 
-        while (opModeIsActive()) {
-            telemetry.addData("Values", valBottom + "   " + valTop);
+        while (!isStarted()) {
             telemetry.update();
+        }
+
+        waitForStart();
+        runtime.reset();
+
+        if (valBottom == 0 && valTop == 0) { // No rings; target zone A
+
+        }
+        else if (valTop == 255) { // All rings; target zone C
+
+        }
+        else { // One ring; target zone B
+
         }
     }
 
