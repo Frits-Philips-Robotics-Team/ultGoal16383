@@ -92,13 +92,13 @@ public class RingHandling {
             tower = new Pose2d(72, 36);
         }
         else if (target.equals("red left")) {
-            tower = new Pose2d(72, -6);
+            tower = new Pose2d(72, -7);
         }
         else if (target.equals("red mid")) {
             tower = new Pose2d(72, -14);
         }
         else {
-            tower = new Pose2d(72, -20);
+            tower = new Pose2d(72, -21);
         }
 
         currentPose = currentPose.minus(tower);
@@ -119,7 +119,7 @@ public class RingHandling {
             goalHeight = 42;
         }
         else if (target.equals("red left")) {
-            tower = new Pose2d(72, -6);
+            tower = new Pose2d(72, -7);
             goalHeight = 30;
         }
         else if (target.equals("red mid")) {
@@ -127,7 +127,7 @@ public class RingHandling {
             goalHeight = 30;
         }
         else {
-            tower = new Pose2d(72, -20);
+            tower = new Pose2d(72, -21);
             goalHeight = 30;
         }
 
@@ -148,13 +148,13 @@ public class RingHandling {
             tower = new Pose2d(72, 36);
         }
         else if (target.equals("red left")) {
-            tower = new Pose2d(72, -6);
+            tower = new Pose2d(72, -7);
         }
         else if (target.equals("red mid")) {
             tower = new Pose2d(72, -14);
         }
         else {
-            tower = new Pose2d(72, -20);
+            tower = new Pose2d(72, -21);
         }
 
         currentPose = currentPose.minus(tower);

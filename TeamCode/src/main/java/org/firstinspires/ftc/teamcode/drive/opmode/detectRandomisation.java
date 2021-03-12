@@ -25,24 +25,24 @@ import java.util.Locale;
 //import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
-@Autonomous(name= "detectRandomisation", group="red")
+@Autonomous(name= "BlueStoneOnFloor", group="blue")
 //@Disabled//comment out this line before using
-public class DetectRandomisation extends LinearOpMode {
+public class detectRandomisation extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
 
 
-    //0 means no ring, 255 means orange ring
+    //0 means no ring, 1 means orange ring
     //-1 for debug, but we can keep it like this because if it works, it should change to either 0 or 255
     private static int valTop = -1;
     private static int valBottom = -1;
     private static float rectHeight = .6f/8f;
-    private static float rectWidth = .6f/8f;
+    private static float rectWidth = 1.5f/8f;
 
     private static float offsetX = 0f/8f;//changing this moves the three rects and the three circles left or right, range : (-2, 2) not inclusive
-    private static float offsetY = 0f/8f;//changing this moves the three rects and circles up or down, range: (-4, 4) not inclusive
+    private static float offsetY = 1f/8f;//changing this moves the three rects and circles up or down, range: (-4, 4) not inclusive
 
-    private static float[] topPos = {3f/8f+offsetX, 5f/8f+offsetY};//0 = col, 1 = row
-    private static float[] bottomPos = {3f/8f+offsetX, 6f/8f+offsetY};
+    private static float[] topPos = {3f/8f+offsetX, 4f/8f+offsetY};//0 = col, 1 = row
+    private static float[] bottomPos = {3f/8f+offsetX, 3f/8f+offsetY};
     //moves all rectangles right or left by amount. units are in ratio to monitor
 
     private final int rows = 240;
@@ -61,7 +61,7 @@ public class DetectRandomisation extends LinearOpMode {
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
-                webcam.startStreaming(cols, rows, OpenCvCameraRotation.UPRIGHT);//display on RC
+                webcam.startStreaming(rows, cols, OpenCvCameraRotation.SIDEWAYS_LEFT);//display on RC
 
             }
         });
@@ -75,7 +75,6 @@ public class DetectRandomisation extends LinearOpMode {
         telemetry.update();
 
         while (opModeIsActive()) {
-            telemetry.addData("Values", valBottom + "   " + valTop);
             telemetry.update();
         }
     }
@@ -135,7 +134,7 @@ public class DetectRandomisation extends LinearOpMode {
             Core.extractChannel(yCbCrChan2Mat, yCbCrChan2Mat, 2);//takes cb difference and stores
 
             //b&w
-            Imgproc.threshold(yCbCrChan2Mat, thresholdMat, 105, 255, Imgproc.THRESH_BINARY_INV);
+            Imgproc.threshold(yCbCrChan2Mat, thresholdMat, 102, 255, Imgproc.THRESH_BINARY_INV);
 
             //outline/contour
             Imgproc.findContours(thresholdMat, contoursList, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
