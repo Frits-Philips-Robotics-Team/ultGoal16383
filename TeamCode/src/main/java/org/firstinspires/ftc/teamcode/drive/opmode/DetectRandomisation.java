@@ -1,11 +1,18 @@
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.drive.GrabberHandling;
+import org.firstinspires.ftc.teamcode.drive.RingHandling;
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.util.PersistentStorage;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -30,6 +37,9 @@ import java.util.Locale;
 public class DetectRandomisation extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
 
+    SampleMecanumDrive drive;
+    RingHandling rings;
+    GrabberHandling grabber;
 
     //0 means no ring, 255 means orange ring
     //-1 for debug, but we can keep it like this because if it works, it should change to either 0 or 255
@@ -62,14 +72,34 @@ public class DetectRandomisation extends LinearOpMode {
             @Override
             public void onOpened() {
                 webcam.startStreaming(cols, rows, OpenCvCameraRotation.UPRIGHT);//display on RC
-
             }
         });
+
+        drive = new SampleMecanumDrive(hardwareMap);
+        rings = new RingHandling(hardwareMap);
+        grabber = new GrabberHandling(hardwareMap);
+
+        drive.setPoseEstimate(new Pose2d(-61, -42, Math.PI));
+
+        Trajectory dropA = drive.trajectoryBuilder(new Pose2d(-61, -42, Math.PI), 0)
+                .lineToConstantHeading(new Vector2d(12, -42))
+                .build();
+        Trajectory pickUp = drive.trajectoryBuilder(dropA.end(), Math.toRadians(155))
+                .splineToLinearHeading(new Pose2d(-29, -22, 0.5 * Math.PI), Math.PI)
+                .build();
+        Trajectory dropA2 = drive.trajectoryBuilder(pickUp.end(), 0)
+                .splineToLinearHeading(new Pose2d(12, -37, Math.PI), 0)
+                .build();
+        Trajectory shoot = drive.trajectoryBuilder(dropA2.end(), Math.PI)
+                .splineToLinearHeading(new Pose2d(-4, -37, 0), 0)
+                .build();
 
         telemetry.addData("Values", valBottom + "   " + valTop);
         telemetry.addData("Height", rows);
         telemetry.addData("Width", cols);
         telemetry.update();
+
+        grabber.moveGrabber("inSize", "closed");
 
         while (!isStarted()) {
             telemetry.update();
@@ -78,8 +108,49 @@ public class DetectRandomisation extends LinearOpMode {
         waitForStart();
         runtime.reset();
 
-        if (valBottom == 0 && valTop == 0) { // No rings; target zone A
+        grabber.moveGrabber("upHalf", "closed");
 
+        if (valBottom == 0 && valTop == 0) { // No rings; target zone A
+            drive.followTrajectory(dropA);
+            grabber.moveGrabber("down", "closed");
+            sleep(400);
+            grabber.moveGrabber("down", "open");
+            sleep(300);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(pickUp);
+            grabber.moveGrabber("down", "open");
+            sleep(400);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("upHalf", "closed");
+            sleep(400);
+            drive.followTrajectory(dropA2);
+            grabber.moveGrabber("down", "closed");
+            sleep(400);
+            grabber.moveGrabber("down", "open");
+            sleep(300);
+            grabber.moveGrabber("inSize", "closed");
+            drive.followTrajectory(shoot);
+            double calcHeading = rings.shootGetHeading(drive.getPoseEstimate(), "red high");
+            double currentHeading = drive.getPoseEstimate().getHeading();
+            if (Math.abs(calcHeading - currentHeading) < Math.PI) {
+                drive.turn(calcHeading - currentHeading);
+            }
+            else if (calcHeading - currentHeading > 0){
+                drive.turn((calcHeading - currentHeading) - 2 * Math.PI);
+            }
+            else {
+                drive.turn(2 * Math.PI + (calcHeading - currentHeading));
+            }
+            rings.shoot();
+            while(opModeIsActive() && rings.getRingNumber() != 0) {
+                rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
+            }
+            drive.followTrajectory(
+                    drive.trajectoryBuilder(drive.getPoseEstimate())
+                            .splineToLinearHeading(new Pose2d(0, drive.getPoseEstimate().getY()), Math.toRadians(180))
+                            .build()
+            );
         }
         else if (valTop == 255) { // All rings; target zone C
 
@@ -87,6 +158,8 @@ public class DetectRandomisation extends LinearOpMode {
         else { // One ring; target zone B
 
         }
+
+        PersistentStorage.currentPose = drive.getPoseEstimate();
     }
 
     //detection pipeline
