@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.drive;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.control.PIDCoefficients;
+import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
 
 /*
  * Constants shared between multiple drive types.
@@ -60,10 +61,10 @@ public class DriveConstants {
      * acceleration values are required, and the jerk values are optional (setting a jerk of 0.0
      * forces acceleration-limited profiling). All distance units are inches.
      */
-    public static double MAX_VEL = 47;
-    public static double MAX_ACCEL = 30;
-    public static double MAX_ANG_VEL = Math.toRadians(180);
-    public static double MAX_ANG_ACCEL = Math.toRadians(180);
+    public static DriveConstraints BASE_CONSTRAINTS = new DriveConstraints(
+            47.0, 30.0, 0.0,
+            Math.toRadians(180.0), Math.toRadians(180.0), 0.0
+    );
 
 
     public static double encoderTicksToInches(double ticks) {
