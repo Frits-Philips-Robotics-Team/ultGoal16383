@@ -235,8 +235,8 @@ public class TeleOpFieldCentric extends OpMode
         drive.update();
         rings.update(matchTimer.milliseconds(), poseEstimate, target);
 
-        telemetry.addData("Current RPM", (int) rings.getRPM());
-        telemetry.addData("Calc RPM", rings.calcRPM);
+//        telemetry.addData("distance", rings.getDistanceSensor());
+//        telemetry.addData("rings amount", rings.getRingNumber());
     }
 
     /*

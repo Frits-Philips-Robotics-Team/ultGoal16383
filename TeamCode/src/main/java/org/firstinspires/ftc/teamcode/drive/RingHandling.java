@@ -33,13 +33,13 @@ public class RingHandling {
     double pusherStart;
     double shooterTime;
 
-    shooterStates state_s;
+    public shooterStates state_s;
 
     HardwareMap hardwareMap;
 
     public int calcRPM;
 
-    enum shooterStates {
+    public enum shooterStates {
         INITIALIZE, CHECKRPM, WAIT, NOTHING
     }
 
@@ -112,23 +112,23 @@ public class RingHandling {
 
         if (target.equals("red high")) {
             tower = new Pose2d(72, -36);
-            goalHeight = 42; // about 30 for powershot
+            goalHeight = 46;
         }
         else if (target.equals("blue high")) {
             tower = new Pose2d(72, 36);
-            goalHeight = 42;
+            goalHeight = 46;
         }
         else if (target.equals("red left")) {
             tower = new Pose2d(72, -9);
-            goalHeight = 30;
+            goalHeight = 31;
         }
         else if (target.equals("red mid")) {
             tower = new Pose2d(72, -17);
-            goalHeight = 30;
+            goalHeight = 31;
         }
         else {
             tower = new Pose2d(72, -23);
-            goalHeight = 30;
+            goalHeight = 31;
         }
 
         currentPose = currentPose.minus(tower);
@@ -168,18 +168,17 @@ public class RingHandling {
     }
 
     public double getDistanceSensor() {
-        double dist = distance.getDistance(DistanceUnit.MM);
-        return dist;
+        return distance.getDistance(DistanceUnit.MM);
     }
 
     public int getRingNumber() {
-        if (getDistanceSensor() < 40) {
+        if (getDistanceSensor() < 70) {
             return 3;
         }
-        else if (getDistanceSensor() < 60) {
+        else if (getDistanceSensor() < 90) {
             return 2;
         }
-        else if (getDistanceSensor() < 83) {
+        else if (getDistanceSensor() < 112) {
             return 1;
         }
         else {

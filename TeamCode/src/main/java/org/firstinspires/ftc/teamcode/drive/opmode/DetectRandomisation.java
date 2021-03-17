@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.drive.opmode;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.hardware.ams.AMSColorSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -82,16 +83,55 @@ public class DetectRandomisation extends LinearOpMode {
         drive.setPoseEstimate(new Pose2d(-61, -42, Math.PI));
 
         Trajectory dropA = drive.trajectoryBuilder(new Pose2d(-61, -42, Math.PI), 0)
-                .lineToConstantHeading(new Vector2d(12, -42))
+                .lineToConstantHeading(new Vector2d(12, -48))
                 .build();
-        Trajectory pickUp = drive.trajectoryBuilder(dropA.end(), Math.toRadians(155))
-                .splineToLinearHeading(new Pose2d(-29, -22, 0.5 * Math.PI), Math.PI)
+        Trajectory pickUpA = drive.trajectoryBuilder(dropA.end(), Math.toRadians(155))
+                .splineToLinearHeading(new Pose2d(-24, -19, 0.5 * Math.PI), Math.PI)
                 .build();
-        Trajectory dropA2 = drive.trajectoryBuilder(pickUp.end(), 0)
-                .splineToLinearHeading(new Pose2d(12, -37, Math.PI), 0)
+        Trajectory dropA2 = drive.trajectoryBuilder(new Pose2d(pickUpA.end().getX() - 7, pickUpA.end().getY(), 0.5 * Math.PI), 0)
+                .splineToLinearHeading(new Pose2d(12, -40, Math.PI), 0)
                 .build();
-        Trajectory shoot = drive.trajectoryBuilder(dropA2.end(), Math.PI)
-                .splineToLinearHeading(new Pose2d(-4, -37, 0), 0)
+        Trajectory shootA = drive.trajectoryBuilder(dropA2.end(), Math.PI)
+                .splineToLinearHeading(new Pose2d(-4, -37, 0), Math.PI)
+                .build();
+        Trajectory parkA = drive.trajectoryBuilder(shootA.end(), 0)
+                .splineToLinearHeading(new Pose2d(12, shootA.end().getY(), 0), 0)
+                .build();
+
+        Trajectory dropB = drive.trajectoryBuilder(new Pose2d(-61, -42, Math.PI), 0)
+                .lineToConstantHeading(new Vector2d(36, -30))
+                .build();
+        Trajectory pickUpB = drive.trajectoryBuilder(dropB.end(), Math.PI)
+                .splineToLinearHeading(new Pose2d(-24, -19, 0.5 * Math.PI), Math.PI)
+                .build();
+        Trajectory dropB2 = drive.trajectoryBuilder(new Pose2d(pickUpB.end().getX() - 7, pickUpB.end().getY(), 0.5 * Math.PI), 0)
+                .splineToLinearHeading(new Pose2d(36, -19, Math.PI), 0)
+                .build();
+        Trajectory shootB = drive.trajectoryBuilder(dropB2.end(), Math.toRadians(135))
+                .splineToLinearHeading(new Pose2d(-4, -30, 0), Math.PI)
+                .build();
+        Trajectory parkB = drive.trajectoryBuilder(shootB.end(), 0)
+                .splineToLinearHeading(new Pose2d(12, shootB.end().getY(), 0), 0)
+                .build();
+
+        Trajectory dropC = drive.trajectoryBuilder(new Pose2d(-61, -42, Math.PI), 0)
+                .lineToConstantHeading(new Vector2d(60, -49))
+                .build();
+        Trajectory pickUpC = drive.trajectoryBuilder(dropC.end(), Math.toRadians(155))
+                .splineToLinearHeading(new Pose2d(-24, -18, 0.5 * Math.PI), Math.PI)
+                .build();
+        Trajectory dropC2 = drive.trajectoryBuilder(new Pose2d(pickUpC.end().getX() - 7, pickUpC.end().getY(), 0.5 * Math.PI), 0)
+                .splineToLinearHeading(new Pose2d(60, -41, Math.PI), 0)
+                .build();
+        Trajectory shootC = drive.trajectoryBuilder(dropC2.end(), Math.toRadians(135))
+                .splineToLinearHeading(new Pose2d(-4, -37, 0), Math.PI)
+                .build();
+        Trajectory parkC = drive.trajectoryBuilder(shootC.end(), 0)
+                .splineToLinearHeading(new Pose2d(12, shootC.end().getY(), 0), 0)
+                .build();
+
+        Trajectory grabWobble = drive.trajectoryBuilder(pickUpA.end(), Math.PI)
+                .strafeRight(-7)
                 .build();
 
         telemetry.addData("Values", valBottom + "   " + valTop);
@@ -113,24 +153,26 @@ public class DetectRandomisation extends LinearOpMode {
         if (valBottom == 0 && valTop == 0) { // No rings; target zone A
             drive.followTrajectory(dropA);
             grabber.moveGrabber("down", "closed");
-            sleep(400);
-            grabber.moveGrabber("down", "open");
             sleep(300);
-            grabber.moveGrabber("upHalf", "open");
-            drive.followTrajectory(pickUp);
             grabber.moveGrabber("down", "open");
-            sleep(400);
+            sleep(500);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(pickUpA);
+            grabber.moveGrabber("down", "open");
+            sleep(200);
+            drive.followTrajectory(grabWobble);
             grabber.moveGrabber("down", "closed");
             sleep(300);
             grabber.moveGrabber("upHalf", "closed");
             sleep(400);
             drive.followTrajectory(dropA2);
             grabber.moveGrabber("down", "closed");
-            sleep(400);
-            grabber.moveGrabber("down", "open");
             sleep(300);
+            grabber.moveGrabber("down", "open");
+            sleep(600);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(shootA);
             grabber.moveGrabber("inSize", "closed");
-            drive.followTrajectory(shoot);
             double calcHeading = rings.shootGetHeading(drive.getPoseEstimate(), "red high");
             double currentHeading = drive.getPoseEstimate().getHeading();
             if (Math.abs(calcHeading - currentHeading) < Math.PI) {
@@ -143,20 +185,96 @@ public class DetectRandomisation extends LinearOpMode {
                 drive.turn(2 * Math.PI + (calcHeading - currentHeading));
             }
             rings.shoot();
-            while(opModeIsActive() && rings.getRingNumber() != 0) {
+            while(opModeIsActive() && rings.state_s != RingHandling.shooterStates.NOTHING) {
                 rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
             }
-            drive.followTrajectory(
-                    drive.trajectoryBuilder(drive.getPoseEstimate())
-                            .splineToLinearHeading(new Pose2d(0, drive.getPoseEstimate().getY()), Math.toRadians(180))
-                            .build()
-            );
+            rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
+            drive.followTrajectory(parkA);
+            PersistentStorage.currentPose = drive.getPoseEstimate();
         }
         else if (valTop == 255) { // All rings; target zone C
-
+            drive.followTrajectory(dropC);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("down", "open");
+            sleep(600);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(pickUpC);
+            grabber.moveGrabber("down", "open");
+            sleep(200);
+            drive.followTrajectory(grabWobble);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("upHalf", "closed");
+            sleep(400);
+            drive.followTrajectory(dropC2);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("down", "open");
+            sleep(600);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(shootC);
+            grabber.moveGrabber("inSize", "closed");
+            double calcHeading = rings.shootGetHeading(drive.getPoseEstimate(), "red high");
+            double currentHeading = drive.getPoseEstimate().getHeading();
+            if (Math.abs(calcHeading - currentHeading) < Math.PI) {
+                drive.turn(calcHeading - currentHeading);
+            }
+            else if (calcHeading - currentHeading > 0){
+                drive.turn((calcHeading - currentHeading) - 2 * Math.PI);
+            }
+            else {
+                drive.turn(2 * Math.PI + (calcHeading - currentHeading));
+            }
+            rings.shoot();
+            while(opModeIsActive() && rings.state_s != RingHandling.shooterStates.NOTHING) {
+                rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
+            }
+            rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
+            drive.followTrajectory(parkC);
+            PersistentStorage.currentPose = drive.getPoseEstimate();
         }
         else { // One ring; target zone B
-
+            drive.followTrajectory(dropB);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("down", "open");
+            sleep(650);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(pickUpB);
+            grabber.moveGrabber("down", "open");
+            sleep(200);
+            drive.followTrajectory(grabWobble);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("upHalf", "closed");
+            sleep(400);
+            drive.followTrajectory(dropB2);
+            grabber.moveGrabber("down", "closed");
+            sleep(300);
+            grabber.moveGrabber("down", "open");
+            sleep(600);
+            grabber.moveGrabber("upHalf", "open");
+            drive.followTrajectory(shootB);
+            grabber.moveGrabber("inSize", "closed");
+            double calcHeading = rings.shootGetHeading(drive.getPoseEstimate(), "red high");
+            double currentHeading = drive.getPoseEstimate().getHeading();
+            if (Math.abs(calcHeading - currentHeading) < Math.PI) {
+                drive.turn(calcHeading - currentHeading);
+            }
+            else if (calcHeading - currentHeading > 0){
+                drive.turn((calcHeading - currentHeading) - 2 * Math.PI);
+            }
+            else {
+                drive.turn(2 * Math.PI + (calcHeading - currentHeading));
+            }
+            rings.shoot();
+            while(opModeIsActive() && rings.state_s != RingHandling.shooterStates.NOTHING) {
+                rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
+            }
+            rings.update(runtime.milliseconds(), drive.getPoseEstimate(), "red high");
+            drive.followTrajectory(parkB);
+            PersistentStorage.currentPose = drive.getPoseEstimate();
         }
 
         PersistentStorage.currentPose = drive.getPoseEstimate();
